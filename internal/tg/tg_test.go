@@ -12,8 +12,8 @@ import (
 
 func TestClient_SendMessage(t *testing.T) {
 	const token = "tok"
-	os.Setenv("TELEGRAM_TOKEN", token)
-	defer os.Unsetenv("TELEGRAM_TOKEN")
+	require.NoError(t, os.Setenv("TELEGRAM_TOKEN", token))
+	defer func() { _ = os.Unsetenv("TELEGRAM_TOKEN") }()
 
 	var called bool
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -34,8 +34,8 @@ func TestClient_SendMessage(t *testing.T) {
 
 func TestClient_SendMessage_Error(t *testing.T) {
 	const token = "tok"
-	os.Setenv("TELEGRAM_TOKEN", token)
-	defer os.Unsetenv("TELEGRAM_TOKEN")
+	require.NoError(t, os.Setenv("TELEGRAM_TOKEN", token))
+	defer func() { _ = os.Unsetenv("TELEGRAM_TOKEN") }()
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)

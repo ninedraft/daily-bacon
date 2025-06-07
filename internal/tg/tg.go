@@ -59,7 +59,7 @@ func (c *Client) SendMessage(ctx context.Context, chatID, msg string, _ ...Img) 
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		b, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("unexpected status %d: %s", resp.StatusCode, string(b))
