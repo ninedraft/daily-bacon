@@ -1,0 +1,49 @@
+{{ define "AirQuality" -}}
+# Air Quality Report
+
+**Location:** {{ printf "%.4f" .Latitude }}, {{ printf "%.4f" .Longitude }}
+**Timezone:** {{ .Timezone }} (UTC {{ .UTCOffsetSeconds }}s)
+
+{{- if .Hourly.Time }}
+## Hourly Data
+_Units:_  
+• time: {{ .HourlyUnits.Time.Format "15:04" }}  
+{{- with .HourlyUnits }}
+  {{- if .PM10 }}• PM10: {{ .PM10 }}{{ end }}
+  {{- if .PM25 }}• PM2.5: {{ .PM25 }}{{ end }}
+  {{- if .Ozone }}• Ozone: {{ .Ozone }}{{ end }}
+  {{- if .NitrogenDioxide }}• NO₂: {{ .NitrogenDioxide }}{{ end }}
+  {{- if .CarbonMonoxide }}• CO: {{ .CarbonMonoxide }}{{ end }}
+  {{- if .SulphurDioxide }}• SO₂: {{ .SulphurDioxide }}{{ end }}
+{{- end }}
+
+{{ range $i, $t := .Hourly.Time -}}
+- {{ $t.Format "2006-01-02 15:04" }}  
+  {{- with index $.Hourly.PM10 $i }}PM10: {{ printf "%.2f" . }} {{ $.HourlyUnits.PM10 }}; {{ end -}}
+  {{- with index $.Hourly.PM25 $i }}PM2.5: {{ printf "%.2f" . }} {{ $.HourlyUnits.PM25 }}; {{ end -}}
+  {{- with index $.Hourly.Ozone $i }}O₃: {{ printf "%.2f" . }} {{ $.HourlyUnits.Ozone }}; {{ end -}}
+  {{- with index $.Hourly.NitrogenDioxide $i }}NO₂: {{ printf "%.2f" . }} {{ $.HourlyUnits.NitrogenDioxide }}; {{ end -}}
+  {{- with index $.Hourly.CarbonMonoxide $i }}CO: {{ printf "%.2f" . }} {{ $.HourlyUnits.CarbonMonoxide }}; {{ end -}}
+  {{- with index $.Hourly.SulphurDioxide $i }}SO₂: {{ printf "%.2f" . }} {{ $.HourlyUnits.SulphurDioxide }}; {{ end -}}
+{{ end }}
+{{ end }}
+
+{{- if .Daily.Time }}
+## Daily Summary
+_Units:_  
+• time: {{ .DailyUnits.Time.Format "2006-01-02" }}  
+{{- with .DailyUnits }}
+  {{- if .PM10Max }}• PM10 max: {{ .PM10Max }}{{ end }}
+  {{- if .PM10Mean }}• PM10 mean: {{ .PM10Mean }}{{ end }}
+  {{- if .PM10Min }}• PM10 min: {{ .PM10Min }}{{ end }}
+{{- end }}
+
+{{ range $i, $d := .Daily.Time -}}
+- {{ $d.Format "2006-01-02" }}  
+  {{- with index $.Daily.PM10Max $i }}max: {{ printf "%.2f" . }} {{ $.DailyUnits.PM10Max }}; {{ end -}}
+  {{- with index $.Daily.PM10Mean $i }}mean: {{ printf "%.2f" . }} {{ $.DailyUnits.PM10Mean }}; {{ end -}}
+  {{- with index $.Daily.PM10Min $i }}min: {{ printf "%.2f" . }} {{ $.DailyUnits.PM10Min }}; {{ end -}}
+{{ end }}
+{{ end }}
+
+{{- end -}}
