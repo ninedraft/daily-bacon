@@ -3,7 +3,6 @@ package tg
 import (
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -11,8 +10,7 @@ import (
 
 func TestClient_SendMessage(t *testing.T) {
 	const token = "tok"
-	require.NoError(t, os.Setenv("TELEGRAM_TOKEN", token))
-	defer func() { _ = os.Unsetenv("TELEGRAM_TOKEN") }()
+	t.Setenv("TELEGRAM_TOKEN", token)
 
 	var called bool
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -33,10 +31,9 @@ func TestClient_SendMessage(t *testing.T) {
 
 func TestClient_SendMessage_Error(t *testing.T) {
 	const token = "tok"
-	require.NoError(t, os.Setenv("TELEGRAM_TOKEN", token))
-	defer func() { _ = os.Unsetenv("TELEGRAM_TOKEN") }()
+	t.Setenv("TELEGRAM_TOKEN", token)
 
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte("bad"))
 	}))

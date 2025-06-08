@@ -25,13 +25,13 @@ func New(transport http.RoundTripper) *Client {
 	return &Client{httpClient: &http.Client{Transport: transport}}
 }
 
-// ErrUnexpectedStatus is returned for non-2xx status codes.
-type ErrUnexpectedStatus struct {
+// UnexpectedStatusError is returned for non-2xx status codes.
+type UnexpectedStatusError struct {
 	Code int
 	Body []byte
 }
 
-func (e *ErrUnexpectedStatus) Error() string {
+func (e *UnexpectedStatusError) Error() string {
 	return fmt.Sprintf("unexpected status %d", e.Code)
 }
 
@@ -43,19 +43,19 @@ func (c *Client) DoJSON(ctx context.Context, req *http.Request, dst any) error {
 	req = req.WithContext(ctx)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("do request url=%s: %w", req.URL, err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return fmt.Errorf("read body: %w", err)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return &ErrUnexpectedStatus{Code: resp.StatusCode, Body: body}
+		return &UnexpectedStatusError{Code: resp.StatusCode, Body: body}
 	}
 	if dst != nil {
 		if err := json.Unmarshal(body, dst); err != nil {
-			return err
+			return fmt.Errorf("unmarshal json: %w", err)
 		}
 	}
 	return nil

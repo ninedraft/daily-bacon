@@ -13,7 +13,7 @@ import (
 
 // HTTPDoer executes HTTP requests.
 type HTTPDoer interface {
-	Do(*http.Request) (*http.Response, error)
+	Do(req *http.Request) (*http.Response, error)
 }
 
 // Client for Telegram Bot API.
@@ -52,12 +52,12 @@ func (c *Client) SendMessage(ctx context.Context, chatID, msg string, _ ...Img) 
 	u := fmt.Sprintf("%s/bot%s/sendMessage", c.apiURL, c.token)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, strings.NewReader(data.Encode()))
 	if err != nil {
-		return err
+		return fmt.Errorf("new request url=%s: %w", u, err)
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	resp, err := c.doer.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("do request: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
