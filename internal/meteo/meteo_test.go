@@ -1,7 +1,6 @@
 package meteo
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -25,7 +24,7 @@ func TestClient_AirQuality(t *testing.T) {
 	c := New(client.New(srv.Client().Transport))
 	c.url = srv.URL
 
-	resp, err := c.AirQuality(context.Background(), Params{
+	resp, err := c.AirQuality(t.Context(), Params{
 		Latitude:  34.7,
 		Longitude: 33.02,
 		Hourly:    "pm2_5,ozone",

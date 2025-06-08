@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/ninedraft/daily-bacon/internal/client"
 	"github.com/ninedraft/daily-bacon/internal/models"
@@ -44,7 +45,7 @@ func (c *Client) AirQuality(ctx context.Context, p Params) (models.AirQualityRes
 	var out models.AirQualityResponse
 	u, err := url.Parse(c.url)
 	if err != nil {
-		return out, err
+		return out, fmt.Errorf("parse url=%s: %w", c.url, err)
 	}
 	q := u.Query()
 	q.Set("latitude", fmt.Sprintf("%f", p.Latitude))
@@ -65,16 +66,19 @@ func (c *Client) AirQuality(ctx context.Context, p Params) (models.AirQualityRes
 		q.Set("timezone", p.Timezone)
 	}
 	if p.ForecastDays > 0 {
-		q.Set("forecast_days", fmt.Sprintf("%d", p.ForecastDays))
+		q.Set("forecast_days", strconv.Itoa(p.ForecastDays))
 	}
 	if p.PastDays > 0 {
-		q.Set("past_days", fmt.Sprintf("%d", p.PastDays))
+		q.Set("past_days", strconv.Itoa(p.PastDays))
 	}
 	u.RawQuery = q.Encode()
-	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
-		return out, err
+		return out, fmt.Errorf("new request url=%s: %w", u, err)
 	}
 	err = c.http.DoJSON(ctx, req, &out)
-	return out, err
+	if err != nil {
+		return out, fmt.Errorf("do request: %w", err)
+	}
+	return out, nil
 }
