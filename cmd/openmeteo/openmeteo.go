@@ -28,15 +28,13 @@ func main() {
 	log.SetFlags(log.Lshortfile)
 
 	params := meteo.Params{
-		Longitude:    0,
-		Latitude:     0,
+		Latitude:     34.707130,
+		Longitude:    33.022617,
 		PastDays:     1,
 		ForecastDays: 1,
-		Current:      []string{"pm10", "pm2.5", "dust", "european_aqi"},
-		StartDate:    time.Now().AddDate(0, 0, -1),
-		EndDate:      time.Now().AddDate(0, 0, 1),
+		Current:      []string{"pm10", "pm2_5", "dust", "european_aqi"},
 		Daily:        []string{},
-		Timezone:     time.Local.String(),
+		Timezone:     "GMT",
 	}
 	bindRequestFlags(flag.CommandLine, "api", &params)
 
@@ -58,10 +56,12 @@ func main() {
 		return
 	}
 
+	fmt.Printf("%+v\n\n", resp)
 	if err := view.AirQuality(os.Stdout, resp); err != nil {
 		log.Printf("formatting response: %v", err)
 		exitCode = 11
 	}
+	_, _ = os.Stdout.WriteString("\n")
 }
 
 func bindRequestFlags(flags *flag.FlagSet, prefix string, p *meteo.Params) {

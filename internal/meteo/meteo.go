@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ninedraft/daily-bacon/internal/client"
@@ -52,12 +53,17 @@ func (c *Client) AirQuality(ctx context.Context, p Params) (models.AirQualityRes
 	q := u.Query()
 	q.Set("latitude", fmt.Sprintf("%f", p.Latitude))
 	q.Set("longitude", fmt.Sprintf("%f", p.Longitude))
+
+	if len(p.Current) > 0 {
+		q.Set("current", strings.Join(p.Current, ","))
+	}
 	for _, hourly := range p.Hourly {
 		q.Add("hourly", hourly)
 	}
 	for _, daily := range p.Daily {
 		q.Add("daily", daily)
 	}
+
 	if !p.StartDate.IsZero() {
 		q.Set("start_date", p.StartDate.Format(time.DateOnly))
 	}
@@ -79,6 +85,9 @@ func (c *Client) AirQuality(ctx context.Context, p Params) (models.AirQualityRes
 	if err != nil {
 		return out, fmt.Errorf("new request url=%s: %w", u, err)
 	}
+
+	// https://air-quality-api.open-meteo.com/v1/air-quality?latitude=34.70713&longitude=33&hourly=pm10,pm2_5,olive_pollen,european_aqi&current=dust,olive_pollen&start_date=2025-06-01&end_date=2025-06-13
+	fmt.Printf("DEBUG URL: %s\n", req.URL)
 
 	err = c.http.DoJSON(ctx, req, &out)
 	if err != nil {

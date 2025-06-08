@@ -32,8 +32,10 @@ type UnexpectedStatusError struct {
 }
 
 func (e *UnexpectedStatusError) Error() string {
-	return fmt.Sprintf("unexpected status %d", e.Code)
+	return fmt.Sprintf("unexpected status %d: %s", e.Code, e.Body)
 }
+
+const bodySizeLimit = 10_000_000
 
 // DoJSON sends the request and decodes JSON response into dst.
 func (c *Client) DoJSON(ctx context.Context, req *http.Request, dst any) error {
@@ -46,7 +48,8 @@ func (c *Client) DoJSON(ctx context.Context, req *http.Request, dst any) error {
 		return fmt.Errorf("do request url=%s: %w", req.URL, err)
 	}
 	defer func() { _ = resp.Body.Close() }()
-	body, err := io.ReadAll(resp.Body)
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, bodySizeLimit))
 	if err != nil {
 		return fmt.Errorf("read body: %w", err)
 	}
