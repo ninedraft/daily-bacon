@@ -16,7 +16,7 @@ func TestClient_AirQuality(t *testing.T) {
 		require.Equal(t, "/", r.URL.Path)
 		require.Equal(t, "34.700000", r.URL.Query().Get("latitude"))
 		require.Equal(t, "33.020000", r.URL.Query().Get("longitude"))
-		require.Equal(t, []string{"pm2_5", "ozone"}, r.URL.Query().Get("hourly"))
+		require.Equal(t, "pm2_5,ozone", r.URL.Query().Get("hourly"))
 		_ = json.NewEncoder(w).Encode(models.AirQualityResponse{Latitude: 34.7, Longitude: 33.02})
 	}))
 	defer srv.Close()
