@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/ninedraft/daily-bacon/internal/client"
 	"github.com/ninedraft/daily-bacon/internal/models"
@@ -29,15 +30,15 @@ func New(cl *client.Client) *Client {
 
 // Params for air quality request.
 type Params struct {
-	Latitude     float64
-	Longitude    float64
-	Hourly       string
-	Daily        string
-	StartDate    string
-	EndDate      string
-	Timezone     string
-	ForecastDays int
-	PastDays     int
+	Latitude           float64
+	Longitude          float64
+	Current            []string
+	Hourly             []string
+	Daily              []string
+	StartDate, EndDate time.Time
+	Timezone           string
+	ForecastDays       int
+	PastDays           int
 }
 
 // AirQuality fetches air quality data.
@@ -47,20 +48,21 @@ func (c *Client) AirQuality(ctx context.Context, p Params) (models.AirQualityRes
 	if err != nil {
 		return out, fmt.Errorf("parse url=%s: %w", c.url, err)
 	}
+
 	q := u.Query()
 	q.Set("latitude", fmt.Sprintf("%f", p.Latitude))
 	q.Set("longitude", fmt.Sprintf("%f", p.Longitude))
-	if p.Hourly != "" {
-		q.Set("hourly", p.Hourly)
+	for _, hourly := range p.Hourly {
+		q.Add("hourly", hourly)
 	}
-	if p.Daily != "" {
-		q.Set("daily", p.Daily)
+	for _, daily := range p.Daily {
+		q.Add("daily", daily)
 	}
-	if p.StartDate != "" {
-		q.Set("start_date", p.StartDate)
+	if !p.StartDate.IsZero() {
+		q.Set("start_date", p.StartDate.Format(time.DateOnly))
 	}
-	if p.EndDate != "" {
-		q.Set("end_date", p.EndDate)
+	if !p.EndDate.IsZero() {
+		q.Set("end_date", p.EndDate.Format(time.DateOnly))
 	}
 	if p.Timezone != "" {
 		q.Set("timezone", p.Timezone)
@@ -71,11 +73,13 @@ func (c *Client) AirQuality(ctx context.Context, p Params) (models.AirQualityRes
 	if p.PastDays > 0 {
 		q.Set("past_days", strconv.Itoa(p.PastDays))
 	}
+
 	u.RawQuery = q.Encode()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
 		return out, fmt.Errorf("new request url=%s: %w", u, err)
 	}
+
 	err = c.http.DoJSON(ctx, req, &out)
 	if err != nil {
 		return out, fmt.Errorf("do request: %w", err)
