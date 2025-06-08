@@ -1,7 +1,6 @@
 package client
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -23,35 +22,35 @@ func TestClient_DoJSON(t *testing.T) {
 	defer srv.Close()
 
 	c := New(srv.Client().Transport)
-	req, err := http.NewRequest(http.MethodGet, srv.URL, nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, srv.URL, nil)
 	require.NoError(t, err)
 
 	var out resp
-	err = c.DoJSON(context.Background(), req, &out)
+	err = c.DoJSON(t.Context(), req, &out)
 	require.NoError(t, err)
 	require.Equal(t, "ok", out.Value)
 }
 
 func TestClient_DoJSON_ErrorStatus(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		http.Error(w, "fail", http.StatusBadRequest)
 	}))
 	defer srv.Close()
 
 	c := New(srv.Client().Transport)
-	req, err := http.NewRequest(http.MethodGet, srv.URL, nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, srv.URL, nil)
 	require.NoError(t, err)
 
-	err = c.DoJSON(context.Background(), req, nil)
-	var ue *ErrUnexpectedStatus
+	err = c.DoJSON(t.Context(), req, nil)
+	var ue *UnexpectedStatusError
 	require.ErrorAs(t, err, &ue)
 	require.Equal(t, http.StatusBadRequest, ue.Code)
 }
 
 func TestClient_DoJSON_BadScheme(t *testing.T) {
 	c := New(nil)
-	req, err := http.NewRequest(http.MethodGet, "ftp://example.com", nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "ftp://example.com", nil)
 	require.NoError(t, err)
-	err = c.DoJSON(context.Background(), req, nil)
+	err = c.DoJSON(t.Context(), req, nil)
 	require.ErrorIs(t, err, ErrBadResponseScheme)
 }

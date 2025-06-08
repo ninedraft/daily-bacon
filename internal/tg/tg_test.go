@@ -1,10 +1,8 @@
 package tg
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -12,8 +10,7 @@ import (
 
 func TestClient_SendMessage(t *testing.T) {
 	const token = "tok"
-	os.Setenv("TELEGRAM_TOKEN", token)
-	defer os.Unsetenv("TELEGRAM_TOKEN")
+	t.Setenv("TELEGRAM_TOKEN", token)
 
 	var called bool
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -27,17 +24,16 @@ func TestClient_SendMessage(t *testing.T) {
 	c := New(srv.Client())
 	c.apiURL = srv.URL
 
-	err := c.SendMessage(context.Background(), "1", "hello")
+	err := c.SendMessage(t.Context(), "1", "hello")
 	require.NoError(t, err)
 	require.True(t, called)
 }
 
 func TestClient_SendMessage_Error(t *testing.T) {
 	const token = "tok"
-	os.Setenv("TELEGRAM_TOKEN", token)
-	defer os.Unsetenv("TELEGRAM_TOKEN")
+	t.Setenv("TELEGRAM_TOKEN", token)
 
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte("bad"))
 	}))
@@ -46,6 +42,6 @@ func TestClient_SendMessage_Error(t *testing.T) {
 	c := New(srv.Client())
 	c.apiURL = srv.URL
 
-	err := c.SendMessage(context.Background(), "1", "hello")
+	err := c.SendMessage(t.Context(), "1", "hello")
 	require.Error(t, err)
 }
