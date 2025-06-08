@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -58,9 +57,6 @@ func main() {
 		exitCode = 10
 		return
 	}
-
-	pp, _ := json.MarshalIndent(resp, "", "  ")
-	fmt.Printf("%s\n\nrendered:\n\n", pp)
 
 	if err := formatData(os.Stdout, resp); err != nil {
 		log.Printf("formatting response: %v", err)
