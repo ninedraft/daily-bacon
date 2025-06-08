@@ -1,49 +1,45 @@
-{{ define "AirQuality" -}}
-# Air Quality Report
+{{/* Root template for AirQualityResponse */}}
+{{define "AirQuality"}}
 
-**Location:** {{ printf "%.4f" .Latitude }}, {{ printf "%.4f" .Longitude }}
-**Timezone:** {{ .Timezone }} (UTC {{ .UTCOffsetSeconds }}s)
+{{with .Current}}🕒  **Current Air Quality**
+{{- template "DataField" (dict "Icon" "🟤"   "Label" "PM₁₀"                   "Value" .PM10                "Unit" $.CurrentUnits.PM10)}}
+{{- template "DataField" (dict "Icon" "🔴"   "Label" "PM₂.₅"                 "Value" .PM25                "Unit" $.CurrentUnits.PM25)}}
+{{- template "DataField" (dict "Icon" "🛢️"  "Label" "CO"                     "Value" .CarbonMonoxide      "Unit" $.CurrentUnits.CarbonMonoxide)}}
+{{- template "DataField" (dict "Icon" "☁️"   "Label" "CO₂"                    "Value" .CarbonDioxide       "Unit" $.CurrentUnits.CarbonDioxide)}}
+{{- template "DataField" (dict "Icon" "💨"   "Label" "NO₂"                    "Value" .NitrogenDioxide     "Unit" $.CurrentUnits.NitrogenDioxide)}}
+{{- template "DataField" (dict "Icon" "⚠️"   "Label" "SO₂"                    "Value" .SulphurDioxide      "Unit" $.CurrentUnits.SulphurDioxide)}}
+{{- template "DataField" (dict "Icon" "🟣"   "Label" "O₃"                     "Value" .Ozone               "Unit" $.CurrentUnits.Ozone)}}
+{{- template "DataField" (dict "Icon" "📏"   "Label" "Aerosol Optical Depth"  "Value" .AerosolOpticalDepth "Unit" $.CurrentUnits.AerosolOpticalDepth)}}
+{{- template "DataField" (dict "Icon" "🏜️"  "Label" "Dust"                   "Value" .Dust                "Unit" $.CurrentUnits.Dust)}}
+{{- template "DataField" (dict "Icon" "🌞"   "Label" "UV Index"               "Value" .UVIndex             "Unit" $.CurrentUnits.UVIndex)}}
+{{- template "DataField" (dict "Icon" "☀️"   "Label" "UV (Clear Sky)"          "Value" .UVIndexClearSky     "Unit" $.CurrentUnits.UVIndexClearSky)}}
+{{- template "DataField" (dict "Icon" "🧪"   "Label" "Ammonia"                "Value" .Ammonia            "Unit" $.CurrentUnits.Ammonia)}}
+{{- template "DataField" (dict "Icon" "🔥"   "Label" "Methane"                "Value" .Methane            "Unit" $.CurrentUnits.Methane)}}
+{{- template "DataField" (dict "Icon" "🌰"   "Label" "Alder Pollen"           "Value" .AlderPollen        "Unit" $.CurrentUnits.AlderPollen)}}
+{{- template "DataField" (dict "Icon" "🌳"   "Label" "Birch Pollen"           "Value" .BirchPollen        "Unit" $.CurrentUnits.BirchPollen)}}
+{{- template "DataField" (dict "Icon" "🌾"   "Label" "Grass Pollen"           "Value" .GrassPollen        "Unit" $.CurrentUnits.GrassPollen)}}
+{{- template "DataField" (dict "Icon" "🍃"   "Label" "Mugwort Pollen"         "Value" .MugwortPollen      "Unit" $.CurrentUnits.MugwortPollen)}}
+{{- template "DataField" (dict "Icon" "🍈"   "Label" "Olive Pollen"           "Value" .OlivePollen        "Unit" $.CurrentUnits.OlivePollen)}}
+{{- template "DataField" (dict "Icon" "🌵"   "Label" "Ragweed Pollen"         "Value" .RagweedPollen      "Unit" $.CurrentUnits.RagweedPollen)}}
+{{- template "DataField" (dict "Icon" "🇪🇺"   "Label" "EU AQI"                 "Value" .EuropeanAQI        "Unit" $.CurrentUnits.EuropeanAQI)}}
+{{- template "DataField" (dict "Icon" "🇪🇺"   "Label" "EU AQI PM₂.₅"           "Value" .EuropeanAQIPM25   "Unit" $.CurrentUnits.EuropeanAQIPM25)}}
+{{- template "DataField" (dict "Icon" "🇪🇺"   "Label" "EU AQI PM₁₀"           "Value" .EuropeanAQIPM10   "Unit" $.CurrentUnits.EuropeanAQIPM10)}}
+{{- template "DataField" (dict "Icon" "🇪🇺"   "Label" "EU AQI NO₂"           "Value" .EuropeanAQINO2    "Unit" $.CurrentUnits.EuropeanAQINO2)}}
+{{- template "DataField" (dict "Icon" "🇪🇺"   "Label" "EU AQI O₃"            "Value" .EuropeanAQIOzone  "Unit" $.CurrentUnits.EuropeanAQIOzone)}}
+{{- template "DataField" (dict "Icon" "🇪🇺"   "Label" "EU AQI SO₂"           "Value" .EuropeanAQISO2    "Unit" $.CurrentUnits.EuropeanAQISO2)}}
+{{- template "DataField" (dict "Icon" "🇺🇸"   "Label" "US AQI"                "Value" .USAQI             "Unit" $.CurrentUnits.USAQI)}}
+{{- template "DataField" (dict "Icon" "🇺🇸"   "Label" "US AQI PM₂.₅"          "Value" .USAQIPM25         "Unit" $.CurrentUnits.USAQIPM25)}}
+{{- template "DataField" (dict "Icon" "🇺🇸"   "Label" "US AQI PM₁₀"          "Value" .USAQIPM10         "Unit" $.CurrentUnits.USAQIPM10)}}
+{{- template "DataField" (dict "Icon" "🇺🇸"   "Label" "US AQI NO₂"          "Value" .USAQINO2          "Unit" $.CurrentUnits.USAQINO2)}}
+{{- template "DataField" (dict "Icon" "🇺🇸"   "Label" "US AQI O₃"           "Value" .USAQIOzone        "Unit" $.CurrentUnits.USAQIOzone)}}
+{{- template "DataField" (dict "Icon" "🇺🇸"   "Label" "US AQI SO₂"          "Value" .USAQISO2          "Unit" $.CurrentUnits.USAQISO2)}}
+{{- template "DataField" (dict "Icon" "🇺🇸"   "Label" "US AQI CO"           "Value" .USAQICarbonMonoxide   "Unit" $.CurrentUnits.USAQICarbonMonoxide)}}
+{{end}}
+{{end}}
 
-{{- if .Hourly.Time }}
-## Hourly Data
-_Units:_  
-• time: {{ .HourlyUnits.Time.Format "15:04" }}  
-{{- with .HourlyUnits }}
-  {{- if .PM10 }}• PM10: {{ .PM10 }}{{ end }}
-  {{- if .PM25 }}• PM2.5: {{ .PM25 }}{{ end }}
-  {{- if .Ozone }}• Ozone: {{ .Ozone }}{{ end }}
-  {{- if .NitrogenDioxide }}• NO₂: {{ .NitrogenDioxide }}{{ end }}
-  {{- if .CarbonMonoxide }}• CO: {{ .CarbonMonoxide }}{{ end }}
-  {{- if .SulphurDioxide }}• SO₂: {{ .SulphurDioxide }}{{ end }}
-{{- end }}
-
-{{ range $i, $t := .Hourly.Time -}}
-- {{ $t.Format "2006-01-02 15:04" }}  
-  {{- with index $.Hourly.PM10 $i }}PM10: {{ printf "%.2f" . }} {{ $.HourlyUnits.PM10 }}; {{ end -}}
-  {{- with index $.Hourly.PM25 $i }}PM2.5: {{ printf "%.2f" . }} {{ $.HourlyUnits.PM25 }}; {{ end -}}
-  {{- with index $.Hourly.Ozone $i }}O₃: {{ printf "%.2f" . }} {{ $.HourlyUnits.Ozone }}; {{ end -}}
-  {{- with index $.Hourly.NitrogenDioxide $i }}NO₂: {{ printf "%.2f" . }} {{ $.HourlyUnits.NitrogenDioxide }}; {{ end -}}
-  {{- with index $.Hourly.CarbonMonoxide $i }}CO: {{ printf "%.2f" . }} {{ $.HourlyUnits.CarbonMonoxide }}; {{ end -}}
-  {{- with index $.Hourly.SulphurDioxide $i }}SO₂: {{ printf "%.2f" . }} {{ $.HourlyUnits.SulphurDioxide }}; {{ end -}}
-{{ end }}
-{{ end }}
-
-{{- if .Daily.Time }}
-## Daily Summary
-_Units:_  
-• time: {{ .DailyUnits.Time.Format "2006-01-02" }}  
-{{- with .DailyUnits }}
-  {{- if .PM10Max }}• PM10 max: {{ .PM10Max }}{{ end }}
-  {{- if .PM10Mean }}• PM10 mean: {{ .PM10Mean }}{{ end }}
-  {{- if .PM10Min }}• PM10 min: {{ .PM10Min }}{{ end }}
-{{- end }}
-
-{{ range $i, $d := .Daily.Time -}}
-- {{ $d.Format "2006-01-02" }}  
-  {{- with index $.Daily.PM10Max $i }}max: {{ printf "%.2f" . }} {{ $.DailyUnits.PM10Max }}; {{ end -}}
-  {{- with index $.Daily.PM10Mean $i }}mean: {{ printf "%.2f" . }} {{ $.DailyUnits.PM10Mean }}; {{ end -}}
-  {{- with index $.Daily.PM10Min $i }}min: {{ printf "%.2f" . }} {{ $.DailyUnits.PM10Min }}; {{ end -}}
-{{ end }}
-{{ end }}
-
-{{- end -}}
+{{/* Single float field */}}
+{{define "DataField"}}
+{{- if ne .Value 0.0 }}
+{{- printf "%s %s: %s" .Icon .Label (formatFloat .Value)}}{{if .Unit}} {{- .Unit}}{{end}}
+{{- end}}
+{{end}}
