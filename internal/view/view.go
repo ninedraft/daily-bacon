@@ -1,32 +1,88 @@
 package view
 
 import (
-	"embed"
 	"fmt"
-	"html/template"
 	"io"
+	"strconv"
+	"text/tabwriter"
 
 	"github.com/ninedraft/daily-bacon/internal/models"
 )
 
-//go:embed *.template
-var fsys embed.FS
+const (
+	tabWidth = 4
+	tabPad   = 2
+)
 
-var parsed = template.Must(template.New("").
-	Funcs(funcs).
-	ParseFS(fsys, "*.template"))
+func AirQuality(dst io.Writer, data models.AirQualityResponse) error {
+	wr := tabwriter.NewWriter(dst, 0, tabWidth, tabPad, ' ', 0)
 
-var airQuaility = mustFind("AirQuality")
+	if data.Current == nil {
+		fmt.Fprintln(dst, "\nno data")
+		return nil
+	}
+	curr := data.Current
+	units := data.CurrentUnits
 
-func AirQuality(dst io.Writer, params models.AirQualityResponse) error {
-	return airQuaility.Execute(dst, params)
-}
+	fmt.Fprintln(dst, "\n🕒  Current Air Quality")
 
-func mustFind(name string) *template.Template {
-	t := parsed.Lookup(name)
-	if t == nil {
-		panic(fmt.Sprintf("unable to find template %q. Available templates: %s", name, parsed.DefinedTemplates()))
+	type field struct {
+		icon, label string
+		value       float64
+		unit        string
+	}
+	fields := []field{
+		{"🟤", "PM₁₀", curr.PM10, units.PM10},
+		{"🔴", "PM₂.₅", curr.PM25, units.PM25},
+		{"🛢️", "CO", curr.CarbonMonoxide, units.CarbonMonoxide},
+		{"☁️", "CO₂", curr.CarbonDioxide, units.CarbonDioxide},
+		{"💨", "NO₂", curr.NitrogenDioxide, units.NitrogenDioxide},
+		{"🛑", "SO₂", curr.SulphurDioxide, units.SulphurDioxide},
+		{"🟢", "Ozone", curr.Ozone, units.Ozone},
+		{"🌫️", "Aerosol Opt. Depth", curr.AerosolOpticalDepth, units.AerosolOpticalDepth},
+		{"💨", "Dust", curr.Dust, units.Dust},
+		{"🔆", "UV Index", curr.UVIndex, units.UVIndex},
+		{"☀️", "UV Index Clear Sky", curr.UVIndexClearSky, units.UVIndexClearSky},
+		{"🧪", "Ammonia", curr.Ammonia, units.Ammonia},
+		{"🛢️", "Methane", curr.Methane, units.Methane},
+		{"🌳", "Alder Pollen", curr.AlderPollen, units.AlderPollen},
+		{"🌳", "Birch Pollen", curr.BirchPollen, units.BirchPollen},
+		{"🌱", "Grass Pollen", curr.GrassPollen, units.GrassPollen},
+		{"🌾", "Mugwort Pollen", curr.MugwortPollen, units.MugwortPollen},
+		{"🫒", "Olive Pollen", curr.OlivePollen, units.OlivePollen},
+		{"🍂", "Ragweed Pollen", curr.RagweedPollen, units.RagweedPollen},
+		{"📊", "EU AQI", curr.EuropeanAQI, units.EuropeanAQI},
+		{"📊", "EU AQI PM₂.₅", curr.EuropeanAQIPM25, units.EuropeanAQIPM25},
+		{"📊", "EU AQI PM₁₀", curr.EuropeanAQIPM10, units.EuropeanAQIPM10},
+		{"📊", "EU AQI NO₂", curr.EuropeanAQINO2, units.EuropeanAQINO2},
+		{"📊", "EU AQI Ozone", curr.EuropeanAQIOzone, units.EuropeanAQIOzone},
+		{"📊", "EU AQI SO₂", curr.EuropeanAQISO2, units.EuropeanAQISO2},
+		{"📊", "US AQI", curr.USAQI, units.USAQI},
+		{"📊", "US AQI PM₂.₅", curr.USAQIPM25, units.USAQIPM25},
+		{"📊", "US AQI PM₁₀", curr.USAQIPM10, units.USAQIPM10},
+		{"📊", "US AQI NO₂", curr.USAQINO2, units.USAQINO2},
+		{"📊", "US AQI Ozone", curr.USAQIOzone, units.USAQIOzone},
+		{"📊", "US AQI SO₂", curr.USAQISO2, units.USAQISO2},
+		{"📊", "US AQI CO", curr.USAQICarbonMonoxide, units.USAQICarbonMonoxide},
 	}
 
-	return t
+	for _, f := range fields {
+		if f.value != 0 {
+			fmt.Fprintf(wr, "%s %s:\t%s %s\n",
+				f.icon,
+				f.label,
+				formatFloat(f.value),
+				f.unit,
+			)
+		}
+	}
+
+	if err := wr.Flush(); err != nil {
+		return fmt.Errorf("write: %w", err)
+	}
+	return nil
+}
+
+func formatFloat(f float64) string {
+	return strconv.FormatFloat(f, 'f', -1, 64)
 }
