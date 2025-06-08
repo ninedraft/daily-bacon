@@ -1,7 +1,6 @@
 package tg
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -27,7 +26,7 @@ func TestClient_SendMessage(t *testing.T) {
 	c := New(srv.Client())
 	c.apiURL = srv.URL
 
-	err := c.SendMessage(context.Background(), "1", "hello")
+	err := c.SendMessage(t.Context(), "1", "hello")
 	require.NoError(t, err)
 	require.True(t, called)
 }
@@ -46,6 +45,6 @@ func TestClient_SendMessage_Error(t *testing.T) {
 	c := New(srv.Client())
 	c.apiURL = srv.URL
 
-	err := c.SendMessage(context.Background(), "1", "hello")
+	err := c.SendMessage(t.Context(), "1", "hello")
 	require.Error(t, err)
 }

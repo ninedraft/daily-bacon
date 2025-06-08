@@ -1,7 +1,6 @@
 package client
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -27,7 +26,7 @@ func TestClient_DoJSON(t *testing.T) {
 	require.NoError(t, err)
 
 	var out resp
-	err = c.DoJSON(context.Background(), req, &out)
+	err = c.DoJSON(t.Context(), req, &out)
 	require.NoError(t, err)
 	require.Equal(t, "ok", out.Value)
 }
@@ -42,7 +41,7 @@ func TestClient_DoJSON_ErrorStatus(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, srv.URL, nil)
 	require.NoError(t, err)
 
-	err = c.DoJSON(context.Background(), req, nil)
+	err = c.DoJSON(t.Context(), req, nil)
 	var ue *ErrUnexpectedStatus
 	require.ErrorAs(t, err, &ue)
 	require.Equal(t, http.StatusBadRequest, ue.Code)
@@ -52,6 +51,6 @@ func TestClient_DoJSON_BadScheme(t *testing.T) {
 	c := New(nil)
 	req, err := http.NewRequest(http.MethodGet, "ftp://example.com", nil)
 	require.NoError(t, err)
-	err = c.DoJSON(context.Background(), req, nil)
+	err = c.DoJSON(t.Context(), req, nil)
 	require.ErrorIs(t, err, ErrBadResponseScheme)
 }
