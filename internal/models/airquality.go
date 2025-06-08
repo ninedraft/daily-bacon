@@ -11,8 +11,8 @@ type AirQualityResponse struct {
 	Current      *CurrentData  `json:"current"`
 	CurrentUnits *CurrentUnits `json:"current_units"`
 
-	DailyUnits *DailyUnits `json:"daily_units,omitempty"`
-	Daily      *DailyData  `json:"daily,omitempty"`
+	HourlyUnits *HourlyUnits `json:"hourly_units,omitempty"`
+	Hourly      *HourlyData  `json:"hourly,omitempty"`
 }
 
 // HourlyUnits holds the unit labels for each hourly field.
@@ -156,19 +156,4 @@ type CurrentUnits struct {
 	USAQIOzone          string `json:"us_aqi_ozone,omitempty"`
 	USAQISO2            string `json:"us_aqi_sulphur_dioxide,omitempty"`
 	USAQICarbonMonoxide string `json:"us_aqi_carbon_monoxide,omitempty"`
-}
-
-// DailyUnits holds unit labels for each daily statistic.
-type DailyUnits struct {
-	Time     string `json:"time"`
-	PM10Max  string `json:"pm10_max,omitempty"`
-	PM10Mean string `json:"pm10_mean,omitempty"`
-	PM10Min  string `json:"pm10_min,omitempty"`
-}
-
-// DailyData holds daily time series values.
-type DailyData struct {
-	PM10Max  []float64 `json:"pm10_max,omitempty"`
-	PM10Mean []float64 `json:"pm10_mean,omitempty"`
-	PM10Min  []float64 `json:"pm10_min,omitempty"`
 }

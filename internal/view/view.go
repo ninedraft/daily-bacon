@@ -12,7 +12,9 @@ import (
 //go:embed *.template
 var fsys embed.FS
 
-var parsed = template.Must(template.ParseFS(fsys, "*.template"))
+var parsed = template.Must(template.New("").
+	Funcs(funcs).
+	ParseFS(fsys, "*.template"))
 
 var airQuaility = mustFind("AirQuality")
 

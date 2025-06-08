@@ -57,11 +57,11 @@ func (c *Client) AirQuality(ctx context.Context, p Params) (models.AirQualityRes
 	if len(p.Current) > 0 {
 		q.Set("current", strings.Join(p.Current, ","))
 	}
-	for _, hourly := range p.Hourly {
-		q.Add("hourly", hourly)
+	if len(p.Hourly) > 0 {
+		q.Set("hourly", strings.Join(p.Hourly, ","))
 	}
-	for _, daily := range p.Daily {
-		q.Add("daily", daily)
+	if len(p.Daily) > 0 {
+		q.Set("daily", strings.Join(p.Daily, ","))
 	}
 
 	if !p.StartDate.IsZero() {
@@ -81,13 +81,11 @@ func (c *Client) AirQuality(ctx context.Context, p Params) (models.AirQualityRes
 	}
 
 	u.RawQuery = q.Encode()
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
 		return out, fmt.Errorf("new request url=%s: %w", u, err)
 	}
-
-	// https://air-quality-api.open-meteo.com/v1/air-quality?latitude=34.70713&longitude=33&hourly=pm10,pm2_5,olive_pollen,european_aqi&current=dust,olive_pollen&start_date=2025-06-01&end_date=2025-06-13
-	fmt.Printf("DEBUG URL: %s\n", req.URL)
 
 	err = c.http.DoJSON(ctx, req, &out)
 	if err != nil {
