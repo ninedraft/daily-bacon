@@ -1,5 +1,6 @@
 package meteo
 
+//revive:disable:var-naming
 const (
 	// PM10 - Particulate matter with diameter ≤ 10 µm close to surface (10 m above ground)
 	PM10 = "pm10"
