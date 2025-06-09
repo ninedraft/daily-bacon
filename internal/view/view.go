@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"text/tabwriter"
 
+	"github.com/ninedraft/daily-bacon/internal/meteo"
 	"github.com/ninedraft/daily-bacon/internal/models"
 )
 
@@ -68,11 +69,23 @@ func AirQuality(dst io.Writer, data models.AirQualityResponse) error {
 
 	for _, f := range fields {
 		if f.value != 0 {
-			fmt.Fprintf(wr, "%s %s:\t%s %s\n",
+			level := meteo.LevelOf(f.label, f.value)
+			levelIcon := "✅"
+			switch level {
+			case meteo.LevelWatch:
+				levelIcon = "😷"
+			case meteo.LevelLimitExceeded:
+				levelIcon = "⚠️"
+			case meteo.LevelActNow:
+				levelIcon = "‼️☠️"
+			}
+			fmt.Fprintf(wr, "%s\t%s:\t%s\t%s\t%s\t%s\n",
 				f.icon,
 				f.label,
 				formatFloat(f.value),
 				f.unit,
+				level.String(),
+				levelIcon,
 			)
 		}
 	}

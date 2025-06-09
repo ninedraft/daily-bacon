@@ -20,7 +20,7 @@ func (l Level) String() string {
 	case LevelGood:
 		return "Good"
 	case LevelWatch:
-		return "Watch"
+		return "Beware"
 	case LevelLimitExceeded:
 		return "Limit Exceeded"
 	case LevelActNow:
