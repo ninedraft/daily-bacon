@@ -78,6 +78,8 @@ func AirQuality(dst io.Writer, data models.AirQualityResponse) error {
 				levelIcon = "⚠️"
 			case meteo.LevelActNow:
 				levelIcon = "‼️☠️"
+			default:
+				// pass
 			}
 			fmt.Fprintf(wr, "%s\t%s:\t%s\t%s\t%s\t%s\n",
 				f.icon,
