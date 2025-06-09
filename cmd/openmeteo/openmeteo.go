@@ -65,7 +65,6 @@ func main() {
 		log.Printf("formatting response: %v", err)
 		exitCode = 11
 	}
-	_, _ = os.Stdout.WriteString("\n")
 }
 
 func bindRequestFlags(flags *flag.FlagSet, prefix string, p *meteo.Params) {
