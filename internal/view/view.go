@@ -18,13 +18,13 @@ func AirQuality(dst io.Writer, data models.AirQualityResponse) error {
 	wr := tabwriter.NewWriter(dst, 0, tabWidth, tabPad, ' ', 0)
 
 	if data.Current == nil {
-		fmt.Fprintln(dst, "\nno data")
+		fmt.Fprintln(dst, "no data")
 		return nil
 	}
 	curr := data.Current
 	units := data.CurrentUnits
 
-	fmt.Fprintln(dst, "\n🕒  Current Air Quality")
+	fmt.Fprintln(dst, "🕒  Current Air Quality")
 
 	type field struct {
 		icon, label string
