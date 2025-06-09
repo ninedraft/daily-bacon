@@ -10,7 +10,6 @@ import (
 
 func TestClient_SendMessage(t *testing.T) {
 	const token = "tok"
-	t.Setenv("TELEGRAM_TOKEN", token)
 
 	var called bool
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -21,7 +20,7 @@ func TestClient_SendMessage(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := New(srv.Client())
+	c := New(srv.Client(), token)
 	c.apiURL = srv.URL
 
 	err := c.SendMessage(t.Context(), "1", "hello")
@@ -31,7 +30,6 @@ func TestClient_SendMessage(t *testing.T) {
 
 func TestClient_SendMessage_Error(t *testing.T) {
 	const token = "tok"
-	t.Setenv("TELEGRAM_TOKEN", token)
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
@@ -39,7 +37,7 @@ func TestClient_SendMessage_Error(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := New(srv.Client())
+	c := New(srv.Client(), token)
 	c.apiURL = srv.URL
 
 	err := c.SendMessage(t.Context(), "1", "hello")

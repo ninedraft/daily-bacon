@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 )
 
@@ -24,11 +23,11 @@ type Client struct {
 }
 
 // New creates Client with provided HTTPDoer.
-func New(doer HTTPDoer) *Client {
+func New(doer HTTPDoer, token string) *Client {
 	return &Client{
 		doer:   doer,
 		apiURL: "https://api.telegram.org",
-		token:  os.Getenv("TELEGRAM_TOKEN"),
+		token:  token,
 	}
 }
 

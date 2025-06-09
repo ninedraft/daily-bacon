@@ -59,10 +59,6 @@ func main() {
 		return
 	}
 	token := strings.TrimSpace(string(tokenBytes))
-	if err := os.Setenv("TELEGRAM_TOKEN", token); err != nil {
-		logger.Error("set TELEGRAM_TOKEN", slog.Any("err", err))
-		return
-	}
 
 	params := meteo.Params{
 		Latitude:     *latitude,
@@ -100,7 +96,7 @@ func main() {
 	}
 	msg := buf.String()
 
-	tgClient := tg.New(http.DefaultClient)
+	tgClient := tg.New(http.DefaultClient, token)
 	var wg sync.WaitGroup
 	wg.Add(len(groupIDs))
 	for _, id := range groupIDs {
