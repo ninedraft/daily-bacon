@@ -70,8 +70,10 @@ func AirQuality(dst io.Writer, data models.AirQualityResponse) error {
 	for _, f := range fields {
 		if f.value != 0 {
 			level := meteo.LevelOf(f.label, f.value)
-			levelIcon := "✅"
+			levelIcon := "‼️☠️"
 			switch level {
+			case meteo.LevelGood:
+				levelIcon = "✅"
 			case meteo.LevelWatch:
 				levelIcon = "😷"
 			case meteo.LevelLimitExceeded:
