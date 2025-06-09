@@ -8,7 +8,7 @@ func TestLevel_String(t *testing.T) {
 		want  string
 	}{
 		{LevelGood, "Good"},
-		{LevelWatch, "Watch"},
+		{LevelWatch, "Beware"},
 		{LevelLimitExceeded, "Limit Exceeded"},
 		{LevelActNow, "Act Now"},
 		{Level(100), "Unknown"},
