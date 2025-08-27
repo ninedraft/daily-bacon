@@ -1,4 +1,4 @@
-package timezone
+package timezones
 
 import "github.com/lithammer/fuzzysearch/fuzzy"
 

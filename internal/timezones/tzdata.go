@@ -1,4 +1,4 @@
-package timezone
+package timezones
 
 import (
 	"io/fs"
@@ -15,6 +15,10 @@ import (
 
 	"github.com/ninedraft/itermore"
 )
+
+func All() []string {
+	return allTimezones()
+}
 
 var allTimezones = sync.OnceValue(func() (timezones []string) {
 	ls := func(fsys fs.FS) iter.Seq[string] {
