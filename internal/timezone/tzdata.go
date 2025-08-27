@@ -60,7 +60,7 @@ var allTimezones = sync.OnceValue(func() (timezones []string) {
 	return timezones
 })
 
-//go:generate go run ./gen/tzdata_ls.go timezones.txt
+//go:generate go run ./gen/tzdatals timezones.txt
 //go:embed timezones.txt
 var timezonesList string
 
