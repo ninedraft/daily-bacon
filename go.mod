@@ -1,6 +1,6 @@
 module github.com/ninedraft/daily-bacon
 
-go 1.24.4
+go 1.25.5
 
 require (
 	github.com/lithammer/fuzzysearch v1.1.8
