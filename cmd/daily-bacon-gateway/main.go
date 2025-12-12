@@ -25,7 +25,6 @@ const (
 
 	defaultGatewayAddr = ":8080"
 	maxMultipartMemory = 64 << 20 // 64MB
-	defaultMediaType   = "document"
 )
 
 func main() {
@@ -130,6 +129,11 @@ func messageHandler(logger *slog.Logger, client *tg.Client, limiter *rate.Limite
 			return
 		}
 
+		type fileEntry struct {
+			ContentType string
+		}
+		logEntry := map[string]fileEntry{}
+
 		media := make([]tg.MediaUpload, len(uploads))
 		for i, upload := range uploads {
 			var caption string
@@ -137,13 +141,18 @@ func messageHandler(logger *slog.Logger, client *tg.Client, limiter *rate.Limite
 				caption = text
 			}
 			media[i] = tg.MediaUpload{
-				Type:        defaultMediaType,
 				FileName:    upload.FileName,
 				Reader:      upload.Reader,
 				ContentType: upload.ContentType,
 				Caption:     caption,
 			}
+
+			logEntry[upload.FileName] = fileEntry{
+				ContentType: upload.ContentType,
+			}
 		}
+
+		logger.Info("sending files", "files", logEntry)
 
 		if err := client.SendMediaGroup(r.Context(), chatID, media); err != nil {
 			logger.Error("send media group", "err", err)

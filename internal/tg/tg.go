@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
@@ -103,10 +104,8 @@ func (c *Client) SendMediaGroup(ctx context.Context, chatID string, uploads []Me
 		if upload.Reader == nil {
 			return fmt.Errorf("upload %d has nil reader", i)
 		}
-		mediaType := upload.Type
-		if mediaType == "" {
-			mediaType = "document"
-		}
+		mediaType := resolveMediaType(upload)
+		slog.Info("media", "contentType", upload.ContentType, "mediaType", mediaType)
 		items = append(items, mediaItem{
 			Type:    mediaType,
 			Media:   fmt.Sprintf("attach://file%d", i),
@@ -172,4 +171,16 @@ func (c *Client) SendMediaGroup(ctx context.Context, chatID string, uploads []Me
 		return fmt.Errorf("unexpected status %d: %s", resp.StatusCode, payload)
 	}
 	return nil
+}
+
+func resolveMediaType(upload MediaUpload) string {
+	if t := upload.Type; t != "" {
+		return t
+	}
+	ct := strings.ToLower(upload.ContentType)
+	if strings.HasPrefix(ct, "image/") {
+		return "photo"
+	}
+
+	return "document"
 }
