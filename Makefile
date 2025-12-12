@@ -1,8 +1,5 @@
 DOCKERFILE := deploy/Dockerfile
 TARGETS := daily-bacon daily-bacon-gateway openmeteo
-DOCKER_TARGETS := $(addprefix docker-,$(TARGETS))
-IMAGES := $(foreach target,$(TARGETS),$(target):$(GIT_REF))
-
 GIT_REF := $(shell \
 	if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then \
 		tag=$$(git describe --tags --exact-match 2>/dev/null); \
@@ -21,6 +18,9 @@ GIT_REF := $(shell \
 	else \
 		printf 'unknown'; \
 	fi)
+
+DOCKER_TARGETS := $(addprefix docker-,$(TARGETS))
+IMAGES := $(foreach target,$(TARGETS),$(target):$(GIT_REF))
 
 .PHONY: docker-all $(DOCKER_TARGETS)
 
