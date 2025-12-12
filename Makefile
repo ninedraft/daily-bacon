@@ -1,5 +1,6 @@
 DOCKERFILE := deploy/Dockerfile
 TARGETS := daily-bacon daily-bacon-gateway openmeteo
+DOCKER_BUILD := DOCKER_BUILDKIT=1 docker build
 GIT_REF := $(shell \
 	if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then \
 		tag=$$(git describe --tags --exact-match 2>/dev/null); \
@@ -30,7 +31,7 @@ docker-all: $(DOCKER_TARGETS)
 
 $(foreach target,$(TARGETS),$(eval docker-$(target):; \
 	@echo "building $(target):$(GIT_REF)"; \
-	docker build \
+	$(DOCKER_BUILD) \
 		--build-arg TARGET=$(target) \
 		-f $(DOCKERFILE) \
 		-t $(target):$(GIT_REF) \
