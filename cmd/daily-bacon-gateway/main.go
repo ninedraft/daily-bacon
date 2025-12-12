@@ -16,6 +16,8 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/ninedraft/daily-bacon/internal/tg"
+
+	_ "golang.org/x/crypto/x509roots/fallback"
 )
 
 const (
