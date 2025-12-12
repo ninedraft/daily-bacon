@@ -73,7 +73,7 @@ func run(logger *slog.Logger) error {
 
 	server := &http.Server{
 		Addr:         addr,
-		Handler:      mux,
+		Handler:      mwLog(logger, mux),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
@@ -221,4 +221,14 @@ func detectContentType(re io.Reader) (_ io.Reader, contentType string, _ error) 
 	head = head[:n]
 
 	return io.MultiReader(bytes.NewReader(head), re), http.DetectContentType(head), nil
+}
+
+func mwLog(log *slog.Logger, next http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Info("request",
+			"method", r.Method,
+			"URL", r.URL)
+
+		next.ServeHTTP(w, r)
+	}
 }
