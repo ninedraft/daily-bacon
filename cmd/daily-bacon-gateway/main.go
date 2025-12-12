@@ -12,6 +12,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"golang.org/x/time/rate"
 
@@ -27,6 +28,7 @@ const (
 
 	defaultGatewayAddr = ":8080"
 	maxMultipartMemory = 64 << 20 // 64MB
+	maxCaptionRunes    = 1024
 )
 
 func main() {
@@ -107,6 +109,12 @@ func messageHandler(logger *slog.Logger, client *tg.Client, limiter *rate.Limite
 		}()
 
 		text := strings.TrimSpace(r.FormValue("text"))
+		captionText := text
+		needsSeparateText := false
+		if utf8.RuneCountInString(text) > maxCaptionRunes {
+			captionText = ""
+			needsSeparateText = true
+		}
 		uploads, err := collectUploads(r.MultipartForm)
 		if err != nil {
 			logger.Error("collect uploads", "err", err)
@@ -140,7 +148,7 @@ func messageHandler(logger *slog.Logger, client *tg.Client, limiter *rate.Limite
 		for i, upload := range uploads {
 			var caption string
 			if i == 0 {
-				caption = text
+				caption = captionText
 			}
 			media[i] = tg.MediaUpload{
 				FileName:    upload.FileName,
@@ -160,6 +168,14 @@ func messageHandler(logger *slog.Logger, client *tg.Client, limiter *rate.Limite
 			logger.Error("send media group", "err", err)
 			http.Error(w, "failed to deliver media group", http.StatusInternalServerError)
 			return
+		}
+
+		if needsSeparateText {
+			if err := client.SendMessage(r.Context(), chatID, text); err != nil {
+				logger.Error("send text message after media group", "err", err)
+				http.Error(w, "failed to deliver media group text", http.StatusInternalServerError)
+				return
+			}
 		}
 
 		w.WriteHeader(http.StatusAccepted)
