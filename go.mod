@@ -6,6 +6,7 @@ require (
 	github.com/lithammer/fuzzysearch v1.1.8
 	github.com/ninedraft/itermore v0.2.0
 	github.com/stretchr/testify v1.10.0
+	golang.org/x/time v0.14.0
 )
 
 require (
