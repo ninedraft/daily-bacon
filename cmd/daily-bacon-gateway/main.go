@@ -3,13 +3,16 @@ package main
 import (
 	"bytes"
 	"cmp"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log/slog"
+	"maps"
 	"mime/multipart"
 	"net/http"
 	"os"
+	"slices"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -25,11 +28,28 @@ const (
 	envChatID      = "DAILY_BACON_CHAT_ID"
 	envTokenFile   = "TELEGRAM_TOKEN_FILE"
 	envGatewayAddr = "DAILY_BACON_GATEWAY_ADDR"
+	envChatsConfig = "DAILY_BACON_CHAT_CONFIG"
 
 	defaultGatewayAddr = ":8080"
 	maxMultipartMemory = 64 << 20 // 64MB
 	maxCaptionRunes    = 1024
 )
+
+type chatInfo struct {
+	Label string
+	ID    string
+}
+
+type chatResolverFunc func(*http.Request) (chatInfo, error)
+
+type chatLookupError struct {
+	Label  string
+	Labels []string
+}
+
+func (e chatLookupError) Error() string {
+	return fmt.Sprintf("chat label %q not found", e.Label)
+}
 
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
@@ -61,6 +81,16 @@ func run(logger *slog.Logger) error {
 		return fmt.Errorf("set TELEGRAM_TOKEN: %w", err)
 	}
 
+	configPath := os.Getenv(envChatsConfig)
+	if configPath == "" {
+		return fmt.Errorf("missing configmap from %q", envChatsConfig)
+	}
+
+	chatMap, err := loadChatConfig(configPath)
+	if err != nil {
+		return fmt.Errorf("load chat config %s: %w", configPath, err)
+	}
+
 	client := tg.New(http.DefaultClient)
 
 	addr := os.Getenv(envGatewayAddr)
@@ -71,7 +101,12 @@ func run(logger *slog.Logger) error {
 	limiter := rate.NewLimiter(rate.Every(time.Second/2), 1)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /message", messageHandler(logger, client, limiter, chatID))
+	defaultResolver := func(*http.Request) (chatInfo, error) {
+		return chatInfo{Label: "default", ID: chatID}, nil
+	}
+
+	mux.HandleFunc("/message", messageHandler(logger, client, limiter, defaultResolver))
+	mux.HandleFunc("/message/{label}", messageHandler(logger, client, limiter, newChatResolver(chatMap)))
 
 	server := &http.Server{
 		Addr:         addr,
@@ -85,7 +120,7 @@ func run(logger *slog.Logger) error {
 	return server.ListenAndServe()
 }
 
-func messageHandler(logger *slog.Logger, client *tg.Client, limiter *rate.Limiter, chatID string) http.HandlerFunc {
+func messageHandler(logger *slog.Logger, client *tg.Client, limiter *rate.Limiter, resolver chatResolverFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := limiter.Wait(r.Context()); err != nil {
 			slog.Error("waiting for limit", "error", err)
@@ -108,10 +143,21 @@ func messageHandler(logger *slog.Logger, client *tg.Client, limiter *rate.Limite
 			}
 		}()
 
+		chat, err := resolver(r)
+		if err != nil {
+			if lookupErr, ok := err.(chatLookupError); ok {
+				writeChatLookupError(w, lookupErr)
+				return
+			}
+			logger.Error("resolve chat", "err", err)
+			http.Error(w, "unable to resolve chat", http.StatusInternalServerError)
+			return
+		}
+
 		text := strings.TrimSpace(r.FormValue("text"))
 		captionText := text
 		needsSeparateText := false
-		if utf8.RuneCountInString(text) > maxCaptionRunes {
+		if text != "" && utf8.RuneCountInString(text) > maxCaptionRunes {
 			captionText = ""
 			needsSeparateText = true
 		}
@@ -122,16 +168,16 @@ func messageHandler(logger *slog.Logger, client *tg.Client, limiter *rate.Limite
 			return
 		}
 
-		logger.Info("incoming request", "remote", r.RemoteAddr, "files", len(uploads), "has_text", text != "")
+		logger.Info("incoming request", "remote", r.RemoteAddr, "files", len(uploads), "has_text", text != "", "chat_label", chat.Label)
 
 		switch {
 		case len(uploads) == 0 && text == "":
-			logger.Info("nothing to send, skipping")
+			logger.Info("nothing to send, skipping", "chat_label", chat.Label)
 			w.WriteHeader(http.StatusNoContent)
 			return
 		case len(uploads) == 0:
-			if err := client.SendMessage(r.Context(), chatID, text); err != nil {
-				logger.Error("send text message", "err", err)
+			if err := client.SendMessage(r.Context(), chat.ID, text); err != nil {
+				logger.Error("send text message", "err", err, "chat_label", chat.Label)
 				http.Error(w, "failed to deliver message", http.StatusInternalServerError)
 				return
 			}
@@ -162,22 +208,23 @@ func messageHandler(logger *slog.Logger, client *tg.Client, limiter *rate.Limite
 			}
 		}
 
-		logger.Info("sending files", "files", logEntry)
+		logger.Info("sending files", "files", logEntry, "chat_label", chat.Label)
 
-		if err := client.SendMediaGroup(r.Context(), chatID, media); err != nil {
-			logger.Error("send media group", "err", err)
+		if err := client.SendMediaGroup(r.Context(), chat.ID, media); err != nil {
+			logger.Error("send media group", "err", err, "chat_label", chat.Label)
 			http.Error(w, "failed to deliver media group", http.StatusInternalServerError)
 			return
 		}
 
 		if needsSeparateText {
-			if err := client.SendMessage(r.Context(), chatID, text); err != nil {
-				logger.Error("send text message after media group", "err", err)
+			if err := client.SendMessage(r.Context(), chat.ID, text); err != nil {
+				logger.Error("send text message after media group", "err", err, "chat_label", chat.Label)
 				http.Error(w, "failed to deliver media group text", http.StatusInternalServerError)
 				return
 			}
 		}
 
+		logger.Info("delivered", "chat_label", chat.Label, "chat_id", chat.ID)
 		w.WriteHeader(http.StatusAccepted)
 	}
 }
@@ -247,4 +294,45 @@ func mwLog(log *slog.Logger, next http.Handler) http.HandlerFunc {
 
 		next.ServeHTTP(w, r)
 	}
+}
+
+func newChatResolver(chats map[string]string) chatResolverFunc {
+	labels := slices.Sorted(maps.Keys(chats))
+
+	return func(r *http.Request) (chatInfo, error) {
+		label := r.PathValue("label")
+		if label == "" {
+			return chatInfo{}, chatLookupError{Label: label, Labels: labels}
+		}
+		if chatID, ok := chats[label]; ok {
+			return chatInfo{Label: label, ID: chatID}, nil
+		}
+		return chatInfo{}, chatLookupError{Label: label, Labels: labels}
+	}
+}
+
+func writeChatLookupError(w http.ResponseWriter, err chatLookupError) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusBadRequest)
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"error":  err.Error(),
+		"labels": err.Labels,
+	})
+}
+
+func loadChatConfig(path string) (map[string]string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var cfg struct {
+		Chats map[string]string `json:"chats"`
+	}
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		return nil, fmt.Errorf("parse config: %w", err)
+	}
+	if cfg.Chats == nil {
+		cfg.Chats = map[string]string{}
+	}
+	return cfg.Chats, nil
 }
