@@ -1,6 +1,7 @@
 package timezones
 
 import (
+	"errors"
 	"io/fs"
 	"iter"
 	"log"
@@ -23,7 +24,7 @@ func All() []string {
 var allTimezones = sync.OnceValue(func() (timezones []string) {
 	ls := func(fsys fs.FS) iter.Seq[string] {
 		return func(yield func(string) bool) {
-			fs.WalkDir(fsys, ".", func(fpath string, d fs.DirEntry, err error) error {
+			if walkErr := fs.WalkDir(fsys, ".", func(fpath string, d fs.DirEntry, err error) error {
 				if err != nil || !d.IsDir() || path.Ext(d.Name()) != "" {
 					return err
 				}
@@ -33,7 +34,9 @@ var allTimezones = sync.OnceValue(func() (timezones []string) {
 				}
 
 				return nil
-			})
+			}); walkErr != nil && !errors.Is(walkErr, fs.SkipAll) {
+				log.Printf("[WARNING] walking timezones: %v", walkErr)
+			}
 		}
 	}
 
@@ -48,10 +51,18 @@ var allTimezones = sync.OnceValue(func() (timezones []string) {
 	}
 
 	shareZoneInfo, closeShareZoneInfo := zoneinfo("/usr/share/zoneinfo")
-	defer closeShareZoneInfo()
+	defer func() {
+		if err := closeShareZoneInfo(); err != nil {
+			log.Printf("[WARNING] closing /usr/share/zoneinfo: %v", err)
+		}
+	}()
 
 	shareLibZoneInfo, closeShareLibZoneInfo := zoneinfo("/usr/share/lib/zoneinfo")
-	defer closeShareLibZoneInfo()
+	defer func() {
+		if err := closeShareLibZoneInfo(); err != nil {
+			log.Printf("[WARNING] closing /usr/share/lib/zoneinfo: %v", err)
+		}
+	}()
 
 	locations := itermore.Chain(
 		tzdataEmbeded(),

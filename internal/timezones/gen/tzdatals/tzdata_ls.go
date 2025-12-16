@@ -22,6 +22,8 @@ import (
 	"strings"
 )
 
+const tzdataFileMode = 0o600
+
 func main() {
 	status, err := run()
 	if err != nil {
@@ -35,7 +37,7 @@ func run() (int, error) {
 
 	outputFilename := flag.Arg(0)
 	if outputFilename == "" {
-		return 1, fmt.Errorf("missing output filename argument")
+		return 1, errors.New("missing output filename argument")
 	}
 
 	zzipdataFilepath := filepath.Join(os.Getenv("GOROOT"), "src/time/tzdata/zzipdata.go")
@@ -43,7 +45,7 @@ func run() (int, error) {
 
 	zipdata, err := extractZipdata(zzipdataFilepath)
 	if err != nil {
-		return 1, err
+		return 1, fmt.Errorf("extract zipdata: %w", err)
 	}
 
 	tzdata, err := zip.NewReader(
@@ -51,7 +53,7 @@ func run() (int, error) {
 		int64(len(zipdata)),
 	)
 	if err != nil {
-		return 1, err
+		return 1, fmt.Errorf("open zip reader: %w", err)
 	}
 
 	var timezones []string
@@ -72,19 +74,19 @@ func run() (int, error) {
 	slices.Sort(timezones)
 	data := strings.Join(timezones, "\n")
 
-	if err := os.WriteFile(outputFilename, []byte(data), 0644); err != nil {
-		return 1, err
+	if err := os.WriteFile(outputFilename, []byte(data), tzdataFileMode); err != nil {
+		return 1, fmt.Errorf("write file %s: %w", outputFilename, err)
 	}
 
 	return 0, nil
 }
 
 // extractZipdata parses a Go file, finds const zipdata, and returns its evaluated string value.
-func extractZipdata(path string) (string, error) {
+func extractZipdata(filePath string) (string, error) {
 	fset := token.NewFileSet()
-	file, err := parser.ParseFile(fset, path, nil, parser.ParseComments|parser.AllErrors)
+	file, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments|parser.AllErrors)
 	if err != nil {
-		return "", fmt.Errorf("parse file: %w", err)
+		return "", fmt.Errorf("parse file %s: %w", filePath, err)
 	}
 
 	// Find the expression assigned to const zipdata
